@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/signup', authController.signup);
 router.get('/verify-email', authController.verifyEmail);
+router.post('/send-invitation', authController.InvitationEmail);
 router.post('/login', authController.login);
 router.get('/logout', validateSession, authController.logout); 
 router.delete('/:userId', validateSession, authController.deleteUser);

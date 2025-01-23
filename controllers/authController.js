@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { baseUrl, jwtSecret } = require('../config/config');
 const sendVerificationEmail = require('../utils/sendVerificationEmail');
+const sendInvitation = require('../utils/InviteEmail');
 
 const prisma = new PrismaClient();
 
@@ -47,7 +48,7 @@ exports.signup = async (req, res) => {
 
         res.status(200).send('Signup successful! Please check your email to verify your account.');
         console.log(verificationToken, "token");
-        
+
     } catch (error) {
         console.error('Error during signup:', error);
         res.status(500).send('Error during signup.');
@@ -87,6 +88,22 @@ exports.verifyEmail = async (req, res) => {
         res.status(500).send('Something went wrong. Please try again later.');
     }
 };
+
+exports.InvitationEmail = async (req, res) => {
+    const { email, organization, role } = req.body;
+
+    // Basic validation
+    if (!email || !organization || !role) {
+        return res.status(400).json({ error: 'Email, organization, and role are required' });
+    }
+
+    try {
+        await sendInvitation(email, organization, role);
+        res.status(200).json({ message: 'Invitation sent successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to send invitation' });
+    }
+}
 
 // Login
 exports.login = async (req, res) => {
@@ -183,6 +200,7 @@ exports.deleteUser = async (userId) => {
         throw new Error('Error deleting user.');
     }
 };
+
 
 
 // Protected Route
