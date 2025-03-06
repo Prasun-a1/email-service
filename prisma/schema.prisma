@@ -8,19 +8,24 @@ datasource db {
 }
 
 model User {
-  id                  Int            @id @default(autoincrement())
-  role                RoleEnum       @default(USER)
-  email               String         @unique
-  profile             Profile?
-  password            String
-  verified            Boolean        @default(false)
-  sessions            Session[]
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  organization        Organization?  @relation(fields: [organizationId], references: [id])
-  Organization        Organization[] @relation("OrganizationUsers")
-  organizationId      Int?
-  verificationToken   String?        @unique
+  id        Int       @id @default(autoincrement())
+  role      RoleEnum  @default(USER)
+  email     String    @unique
+  profile   Profile?
+  password  String
+  verified  Boolean   @default(false)
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // A user belongs to a single organization
+  organization   Organization? @relation("UserOrganization", fields: [organizationId], references: [id])
+  organizationId Int?
+
+  // A user can be an admin of one organization (if assigned)
+  verificationToken String? @unique
+
+  Organization Organization[] @relation("OrganizationAdmin")
 }
 
 model Profile {
@@ -35,13 +40,18 @@ model Profile {
 model Organization {
   id        Int      @id @default(autoincrement())
   name      String
-  User      User[]
-  users     User[]   @relation("OrganizationUsers")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Members of the organization (each user belongs to only one organization)
+  users User[] @relation("UserOrganization")
+
+  // One orgAdmin per organization
+  orgAdminEmail String @unique
+  // orgAdmin   User @relation("OrganizationAdmin", fields: [orgAdminId], references: [id])
+
+  User User[] @relation("OrganizationAdmin")
 }
-
-
 
 model Session {
   id        Int      @id @default(autoincrement())
@@ -52,8 +62,6 @@ model Session {
   createdAt DateTime @default(now())
   expiresAt DateTime
 }
-
-
 
 enum RoleEnum {
   SUPER_ADMIN

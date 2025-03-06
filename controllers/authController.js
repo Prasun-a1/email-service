@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 // Signup
 exports.signup = async (req, res) => {
-    const { email, password, role, profileData } = req.body; // Accept roles and profile data from the client
+    const { email, password, role, profileData, organizationName } = req.body; // Accept roles and profile data from the client
 
     if (!email || !password) {
         return res.status(400).send('Email and password are required.');
@@ -31,6 +31,18 @@ exports.signup = async (req, res) => {
         // Generate verification token
         const verificationToken = uuid.v4();
 
+        // Find or create the organization
+        let organization = await prisma.organization.findFirst({
+            where: { name: organizationName },
+        });
+
+        if (!organization) {
+            organization = await prisma.organization.create({
+                data: { name: organizationName },
+            });
+        }
+
+
         // Create the new user with optional roles and profile
         const newUser = await prisma.user.create({
             data: {
@@ -43,8 +55,10 @@ exports.signup = async (req, res) => {
         });
 
         // Send verification email (you can modify this to match your setup)
-        const verificationLink = `${process.env.BASE_URL}/auth/verify-email?token=${verificationToken}`;
-        sendVerificationEmail(email, verificationLink);
+        if (!organization) {
+            const verificationLink = `${process.env.BASE_URL}/auth/verify-email?token=${verificationToken}`;
+            sendVerificationEmail(email, verificationLink);
+        }
 
         res.status(200).send('Signup successful! Please check your email to verify your account.');
         console.log(verificationToken, "token");
